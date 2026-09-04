@@ -229,7 +229,7 @@ namespace CampusMaze
                     if (tile == 5 || tile == 6)
                     {
                         bool power = tile == 6;
-                        GameObject pellet = CreateSprite(power ? "Power Pellet" : "Pellet", MazeArt.Pellet(power), cell, pelletsRoot, power ? 0.46f : 0.2f, 3);
+                        GameObject pellet = CreateSprite(power ? "Power Pellet" : "Pellet", MazeArt.Pellet(power), cell, pelletsRoot, power ? 1.25f : 1.1f, 3);
                         if (power && powerAnimator != null)
                             pellet.AddComponent<Animator>().runtimeAnimatorController = powerAnimator;
                         pellets.Add(cell, pellet);

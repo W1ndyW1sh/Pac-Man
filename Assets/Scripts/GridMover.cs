@@ -43,9 +43,14 @@ namespace CampusMaze
                 return;
             ReadInput();
             Animate();
-            if (travelling)
+            float remaining = Time.deltaTime;
+            while (remaining > 0f && game.IsPlaying)
             {
-                elapsed += Time.deltaTime;
+                if (!travelling && !BeginMove())
+                    break;
+                float step = Mathf.Min(duration - elapsed, remaining);
+                elapsed += step;
+                remaining -= step;
                 float t = Mathf.Clamp01(elapsed / duration);
                 transform.position = Vector3.LerpUnclamped(startPosition, targetPosition, t);
                 if (t >= 1f)
@@ -55,24 +60,31 @@ namespace CampusMaze
                     travelling = false;
                     game.PlayerArrived(cell);
                 }
-                return;
+                else
+                    break;
             }
+        }
+
+        private bool BeginMove()
+        {
+            UpdateAutoDirection();
             Vector2Int chosen = level.IsWalkable(level.Step(cell, queuedDirection)) ? queuedDirection : direction;
             if (!level.IsWalkable(level.Step(cell, chosen)))
             {
                 if (queuedDirection != Vector2Int.zero)
                     game.HitWall();
-                return;
+                return false;
             }
             direction = chosen;
             destination = level.Step(cell, direction);
             startPosition = transform.position;
             targetPosition = level.CellToWorld(destination);
             if (Mathf.Abs(destination.x - cell.x) > 1)
-                startPosition.x = targetPosition.x - Mathf.Sign(destination.x - cell.x);
+                startPosition.x = targetPosition.x - direction.x;
             duration = 1f / game.PlayerSpeed;
             elapsed = 0f;
             travelling = true;
+            return true;
         }
 
         public void ResetAt(Vector2Int spawn)
@@ -92,6 +104,10 @@ namespace CampusMaze
             if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) { queuedDirection = Vector2Int.right; manualControl = true; }
             if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) { queuedDirection = Vector2Int.down; manualControl = true; }
             if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) { queuedDirection = Vector2Int.up; manualControl = true; }
+        }
+
+        private void UpdateAutoDirection()
+        {
             if (!manualControl)
             {
                 if (cell == new Vector2Int(6, 1)) queuedDirection = Vector2Int.up;

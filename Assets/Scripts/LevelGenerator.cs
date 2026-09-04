@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace CampusMaze
 {
+    [DefaultExecutionOrder(-100)]
     public sealed class LevelGenerator : MonoBehaviour
     {
         public TextAsset mapCsv;
@@ -20,13 +21,36 @@ namespace CampusMaze
         private int[,] tiles;
         private bool[,] exterior;
         private readonly Dictionary<Vector2Int, GameObject> pellets = new Dictionary<Vector2Int, GameObject>();
+        private int[,] levelMap =
+        {
+            { 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 7 },
+            { 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4 },
+            { 2, 5, 3, 4, 4, 3, 5, 3, 4, 4, 4, 3, 5, 4 },
+            { 2, 6, 4, 0, 0, 4, 5, 4, 0, 0, 0, 4, 5, 4 },
+            { 2, 5, 3, 4, 4, 3, 5, 3, 4, 4, 4, 3, 5, 3 },
+            { 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
+            { 2, 5, 3, 4, 4, 3, 5, 3, 3, 5, 3, 4, 4, 4 },
+            { 2, 5, 3, 4, 4, 3, 5, 4, 4, 5, 3, 4, 4, 3 },
+            { 2, 5, 5, 5, 5, 5, 5, 4, 4, 5, 5, 5, 5, 4 },
+            { 1, 2, 2, 2, 2, 1, 5, 4, 3, 4, 4, 3, 0, 4 },
+            { 0, 0, 0, 0, 0, 2, 5, 4, 3, 4, 4, 3, 0, 3 },
+            { 0, 0, 0, 0, 0, 2, 5, 4, 4, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 2, 5, 4, 4, 0, 3, 4, 4, 8 },
+            { 2, 2, 2, 2, 2, 1, 5, 3, 3, 0, 4, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 4, 0, 0, 0 }
+        };
+
+        private void Start()
+        {
+            if (Width == 0)
+                Generate();
+        }
 
         public void Generate()
         {
-            if (mapCsv == null)
-                throw new InvalidOperationException("LevelGenerator requires a mapCsv TextAsset.");
-
-            int[,] source = ParseMap(mapCsv.text);
+            int[,] source = levelMap;
+            if (source == null || source.GetLength(0) == 0 || source.GetLength(1) == 0)
+                throw new InvalidOperationException("LevelGenerator requires a non-empty levelMap array.");
             int sourceHeight = source.GetLength(0);
             int sourceWidth = source.GetLength(1);
             Width = sourceWidth * 2;
@@ -39,7 +63,10 @@ namespace CampusMaze
                 for (int x = 0; x < Width; x++)
                 {
                     int sourceX = x < sourceWidth ? x : Width - 1 - x;
-                    tiles[y, x] = source[sourceY, sourceX];
+                    int tile = source[sourceY, sourceX];
+                    if (tile < 0 || tile > 8)
+                        throw new InvalidOperationException("Level map tile values must be between 0 and 8.");
+                    tiles[y, x] = tile;
                 }
             }
 
@@ -122,63 +149,6 @@ namespace CampusMaze
             return true;
         }
 
-        private int[,] ParseMap(string raw)
-        {
-            string normalized = raw.Replace("\\r\\n", "\n").Replace("\\n", "\n").Replace("\r\n", "\n").Replace('\r', '\n').TrimStart('\uFEFF');
-            string[] lines = normalized.Split('\n');
-            List<int[]> rows = new List<int[]>();
-            int width = -1;
-
-            for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
-            {
-                string line = lines[lineIndex].Trim();
-                if (line.Length == 0 || line[0] == ',')
-                {
-                    if (rows.Count > 0)
-                        break;
-                    continue;
-                }
-
-                string[] values = line.Split(',');
-                int[] row = new int[values.Length];
-                bool numeric = true;
-                for (int x = 0; x < values.Length; x++)
-                {
-                    int value;
-                    if (!int.TryParse(values[x].Trim(), out value))
-                    {
-                        numeric = false;
-                        break;
-                    }
-                    if (value < 0 || value > 8)
-                        throw new InvalidOperationException("Level map tile values must be between 0 and 8.");
-                    row[x] = value;
-                }
-
-                if (!numeric)
-                {
-                    if (rows.Count > 0)
-                        break;
-                    continue;
-                }
-
-                if (width < 0)
-                    width = row.Length;
-                else if (row.Length != width)
-                    throw new InvalidOperationException("Level map numeric rows must have equal widths.");
-                rows.Add(row);
-            }
-
-            if (rows.Count == 0 || width == 0)
-                throw new InvalidOperationException("Level map CSV contains no numeric map rows.");
-
-            int[,] result = new int[rows.Count, width];
-            for (int y = 0; y < rows.Count; y++)
-                for (int x = 0; x < width; x++)
-                    result[y, x] = rows[y][x];
-            return result;
-        }
-
         private void FindExterior()
         {
             exterior = new bool[Height, Width];
@@ -238,6 +208,7 @@ namespace CampusMaze
             Transform floorsRoot = NewGroup("Floor");
             Transform wallsRoot = NewGroup("Walls");
             Transform pelletsRoot = NewGroup("Pellets");
+            RuntimeAnimatorController powerAnimator = Resources.Load<RuntimeAnimatorController>("Animators/PowerPelletAnimator");
 
             for (int y = 0; y < Height; y++)
             {
@@ -250,18 +221,93 @@ namespace CampusMaze
                         CreateSprite("Floor " + x + " " + y, MazeArt.Floor(), cell, floorsRoot, 1f, -10);
 
                     if (tile >= 1 && tile <= 4 || tile == 7 || tile == 8)
-                        CreateSprite("Wall " + x + " " + y, MazeArt.Wall(tile), cell, wallsRoot, 1.01f, 0);
+                    {
+                        GameObject wall = CreateSprite("Wall " + x + " " + y, MazeArt.Wall(tile), cell, wallsRoot, 1.01f, 0);
+                        OrientWall(wall.transform, cell, tile);
+                    }
 
                     if (tile == 5 || tile == 6)
                     {
                         bool power = tile == 6;
                         GameObject pellet = CreateSprite(power ? "Power Pellet" : "Pellet", MazeArt.Pellet(power), cell, pelletsRoot, power ? 0.46f : 0.2f, 3);
+                        if (power && powerAnimator != null)
+                            pellet.AddComponent<Animator>().runtimeAnimatorController = powerAnimator;
                         pellets.Add(cell, pellet);
                         RemainingPellets++;
                     }
                 }
             }
             TotalPellets = RemainingPellets;
+        }
+
+        private void OrientWall(Transform wall, Vector2Int cell, int tile)
+        {
+            bool mirrorX = cell.x >= Width / 2;
+            bool mirrorY = cell.y > Height / 2;
+            bool right = WallsConnect(tile, TileAt(cell + Vector2Int.right));
+            bool left = WallsConnect(tile, TileAt(cell + Vector2Int.left));
+            bool up = WallsConnect(tile, TileAt(cell + Vector2Int.down));
+            bool down = WallsConnect(tile, TileAt(cell + Vector2Int.up));
+
+            if (mirrorX)
+            {
+                bool swap = left;
+                left = right;
+                right = swap;
+            }
+            if (mirrorY)
+            {
+                bool swap = up;
+                up = down;
+                down = swap;
+            }
+
+            float angle = 0f;
+            if (tile == 1 || tile == 3)
+            {
+                if (right && down)
+                    angle = 0f;
+                else if (right && up)
+                    angle = 90f;
+                else if (left && up)
+                    angle = 180f;
+                else if (left && down)
+                    angle = 270f;
+                else if (up)
+                    angle = right ? 90f : 180f;
+                else if (left)
+                    angle = 270f;
+            }
+            else if (tile == 2 || tile == 4)
+            {
+                if (!(left && right) && ((up && down) || ((up || down) && !(left || right))))
+                    angle = 90f;
+            }
+            else if (tile == 7)
+            {
+                if (!left && up && right && down)
+                    angle = 90f;
+                else if (!down && left && up && right)
+                    angle = 180f;
+                else if (!right && up && left && down)
+                    angle = 270f;
+            }
+
+            if (mirrorX != mirrorY)
+                angle = -angle;
+            wall.localRotation = Quaternion.Euler(0f, 0f, angle);
+            wall.localScale = new Vector3(mirrorX ? -1.01f : 1.01f, mirrorY ? -1.01f : 1.01f, 1f);
+        }
+
+        private bool WallsConnect(int tile, int neighbor)
+        {
+            bool outer = neighbor == 1 || neighbor == 2;
+            bool inner = neighbor == 3 || neighbor == 4 || neighbor == 8;
+            if (neighbor == 7)
+                return true;
+            if (tile == 7)
+                return outer || inner;
+            return tile == 1 || tile == 2 ? outer : inner;
         }
 
         private Transform NewGroup(string name)

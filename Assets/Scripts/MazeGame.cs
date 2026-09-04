@@ -37,7 +37,8 @@ namespace CampusMaze
             if (level == null)
                 level = gameObject.AddComponent<LevelGenerator>();
             level.mapCsv = levelMap != null ? levelMap : Resources.Load<TextAsset>("PacMan Level Map");
-            level.Generate();
+            if (level.Width == 0)
+                level.Generate();
             SetupCamera();
             audioController = gameObject.AddComponent<MazeAudio>();
             audioController.Initialize();
@@ -206,6 +207,7 @@ namespace CampusMaze
                 ghosts[i].ResetAt(level.GhostHome + offsets[i]);
             frightenedTimer = 0f;
             audioController.SetMood(false);
+            audioController.SetDead(false);
             message = "READY";
             yield return new WaitForSeconds(0.8f);
             message = string.Empty;

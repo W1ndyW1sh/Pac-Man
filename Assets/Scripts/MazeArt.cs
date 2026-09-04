@@ -81,7 +81,11 @@ namespace CampusMaze
         public static IEnumerable<KeyValuePair<string, Sprite>> AllSprites()
         {
             for (int type = 1; type <= 8; type++)
+            {
+                if (type == 5 || type == 6)
+                    continue;
                 yield return new KeyValuePair<string, Sprite>("Wall_" + type, Wall(type));
+            }
 
             yield return new KeyValuePair<string, Sprite>("Floor", Floor());
             yield return new KeyValuePair<string, Sprite>("Pellet", Pellet(false));
@@ -160,28 +164,35 @@ namespace CampusMaze
 
         static void DrawWall(Color32[] pixels, int type)
         {
-            FillRect(pixels, 0, 0, 63, 63, Navy);
-            FillRect(pixels, 2, 2, 61, 61, NavyRaised);
-            FillRect(pixels, 5, 5, 58, 58, NavyLight);
-            FillRect(pixels, 7, 7, 56, 56, NavyRaised);
-
-            Color32 edge = type % 3 == 0 ? Teal : Cyan;
-            DrawLine(pixels, 3f, 3f, 60f, 3f, 1.2f, edge);
-            DrawLine(pixels, 3f, 60f, 60f, 60f, 1.2f, edge);
-            DrawLine(pixels, 3f, 3f, 3f, 60f, 1.2f, edge);
-            DrawLine(pixels, 60f, 3f, 60f, 60f, 1.2f, edge);
-
-            Color32 inner = WithAlpha(edge, 135);
-            bool left = type == 1 || type == 4 || type == 6 || type == 7 || type == 8;
-            bool right = type == 1 || type == 3 || type == 5 || type == 7 || type == 8;
-            bool up = type == 2 || type == 5 || type == 6 || type == 7 || type == 8;
-            bool down = type == 2 || type == 3 || type == 4 || type == 7;
-            FillCircle(pixels, 31.5f, 31.5f, 3.2f, inner);
-            if (left) DrawLine(pixels, 8f, 31.5f, 31.5f, 31.5f, 1.1f, inner);
-            if (right) DrawLine(pixels, 31.5f, 31.5f, 55f, 31.5f, 1.1f, inner);
-            if (up) DrawLine(pixels, 31.5f, 31.5f, 31.5f, 55f, 1.1f, inner);
-            if (down) DrawLine(pixels, 31.5f, 8f, 31.5f, 31.5f, 1.1f, inner);
-            FillCircle(pixels, 31.5f, 31.5f, 1.5f, Cream);
+            if (type == 1)
+            {
+                DrawLine(pixels, 24f, 0f, 24f, 40f, 1.5f, Cyan);
+                DrawLine(pixels, 24f, 40f, 64f, 40f, 1.5f, Cyan);
+                DrawLine(pixels, 40f, 0f, 40f, 24f, 1.5f, Cyan);
+                DrawLine(pixels, 40f, 24f, 64f, 24f, 1.5f, Cyan);
+            }
+            else if (type == 2)
+            {
+                DrawLine(pixels, 0f, 24f, 64f, 24f, 1.5f, Cyan);
+                DrawLine(pixels, 0f, 40f, 64f, 40f, 1.5f, Cyan);
+            }
+            else if (type == 3)
+            {
+                DrawLine(pixels, 32f, 0f, 32f, 32f, 2f, Teal);
+                DrawLine(pixels, 32f, 32f, 64f, 32f, 2f, Teal);
+            }
+            else if (type == 4)
+                DrawLine(pixels, 0f, 32f, 64f, 32f, 2f, Teal);
+            else if (type == 5 || type == 6)
+                DrawPellet(pixels, type == 6);
+            else if (type == 7)
+            {
+                DrawLine(pixels, 0f, 24f, 64f, 24f, 1.5f, Cyan);
+                DrawLine(pixels, 0f, 40f, 64f, 40f, 1.5f, Cyan);
+                DrawLine(pixels, 32f, 0f, 32f, 24f, 2f, Teal);
+            }
+            else if (type == 8)
+                DrawLine(pixels, 0f, 32f, 64f, 32f, 1.8f, Coral);
         }
 
         static void DrawFloor(Color32[] pixels)
@@ -265,9 +276,23 @@ namespace CampusMaze
 
             if (dead)
             {
-                DrawEyes(pixels, center, dir, side, true);
-                DrawLine(pixels, 22f, 21f, 31f, 16f, 1.4f, WithAlpha(Cyan, 110));
-                DrawLine(pixels, 31f, 16f, 41f, 21f, 1.4f, WithAlpha(Cyan, 110));
+                if (frame == 0)
+                    DrawEyes(pixels, center, dir, side, true);
+                else
+                {
+                    Vector2 first = center + side * 8f;
+                    Vector2 second = center - side * 8f;
+                    FillEllipse(pixels, first.x, first.y, 5f, 3f, White);
+                    FillEllipse(pixels, second.x, second.y, 5f, 3f, White);
+                    FillCircle(pixels, first.x + dir.x * 2.6f, first.y + dir.y * 1.4f, 1.5f, Cyan);
+                    FillCircle(pixels, second.x + dir.x * 2.6f, second.y + dir.y * 1.4f, 1.5f, Cyan);
+                }
+                Vector2 trail = center - dir * (frame == 0 ? 17f : 13f);
+                Vector2 left = trail + side * (frame == 0 ? 10f : 6f);
+                Vector2 right = trail - side * (frame == 0 ? 10f : 6f);
+                Vector2 tail = trail - dir * (frame == 0 ? 6f : 10f);
+                DrawLine(pixels, left.x, left.y, tail.x, tail.y, 1.4f, WithAlpha(Cyan, 160));
+                DrawLine(pixels, tail.x, tail.y, right.x, right.y, 1.4f, WithAlpha(Cyan, 160));
                 return;
             }
 
@@ -289,12 +314,21 @@ namespace CampusMaze
 
             if (scared)
             {
-                FillCircle(pixels, 24f, 38f, 3.2f, White);
-                FillCircle(pixels, 40f, 38f, 3.2f, White);
-                DrawLine(pixels, 22f, 26f, 27f, 30f, 1.7f, Cream);
-                DrawLine(pixels, 27f, 30f, 32f, 26f, 1.7f, Cream);
-                DrawLine(pixels, 32f, 26f, 37f, 30f, 1.7f, Cream);
-                DrawLine(pixels, 37f, 30f, 42f, 26f, 1.7f, Cream);
+                Vector2 face = center + dir * 7f;
+                Vector2 first = face + side * 7f;
+                Vector2 second = face - side * 7f;
+                FillCircle(pixels, first.x, first.y, 3.6f, White);
+                FillCircle(pixels, second.x, second.y, 3.6f, White);
+                float look = frame == 0 ? 1.2f : 2f;
+                FillCircle(pixels, first.x + dir.x * look, first.y + dir.y * look, 1.5f, Navy);
+                FillCircle(pixels, second.x + dir.x * look, second.y + dir.y * look, 1.5f, Navy);
+                Vector2 mouth = center - dir * 7f;
+                for (int i = 0; i < 4; i++)
+                {
+                    Vector2 a = mouth + side * (-10f + i * 5f) + dir * (i % 2 == 0 ? -2f : 2f);
+                    Vector2 b = mouth + side * (-5f + i * 5f) + dir * (i % 2 == 0 ? 2f : -2f);
+                    DrawLine(pixels, a.x, a.y, b.x, b.y, 1.7f, Cream);
+                }
             }
             else
             {

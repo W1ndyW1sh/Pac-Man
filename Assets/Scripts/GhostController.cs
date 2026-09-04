@@ -44,9 +44,14 @@ namespace CampusMaze
             if (!game.IsPlaying)
                 return;
             Animate();
-            if (travelling)
+            float remaining = Time.deltaTime;
+            while (remaining > 0f && game.IsPlaying)
             {
-                elapsed += Time.deltaTime;
+                if (!travelling)
+                    BeginMove();
+                float step = Mathf.Min(duration - elapsed, remaining);
+                elapsed += step;
+                remaining -= step;
                 float t = Mathf.Clamp01(elapsed / duration);
                 transform.position = Vector3.LerpUnclamped(startPosition, targetPosition, t);
                 if (t >= 1f)
@@ -60,14 +65,19 @@ namespace CampusMaze
                         game.GhostRecovered();
                     }
                 }
-                return;
+                else
+                    break;
             }
+        }
+
+        private void BeginMove()
+        {
             ChooseDirection();
             destination = level.Step(cell, direction);
             startPosition = transform.position;
             targetPosition = level.CellToWorld(destination);
             if (Mathf.Abs(destination.x - cell.x) > 1)
-                startPosition.x = targetPosition.x - Mathf.Sign(destination.x - cell.x);
+                startPosition.x = targetPosition.x - direction.x;
             duration = 1f / (dead ? game.GhostSpeed * 1.45f : game.GhostSpeed);
             elapsed = 0f;
             travelling = true;

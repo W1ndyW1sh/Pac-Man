@@ -12,7 +12,7 @@ public static class CampusMazeProjectBuilder
 {
     const string SpriteFolder = "Assets/Resources/Generated";
     const string AudioFolder = "Assets/Resources/Audio Clips";
-    const string AnimatorFolder = "Assets/Animators";
+    const string AnimatorFolder = "Assets/Resources/Animators";
 
     [MenuItem("Campus Maze/Build Complete Project")]
     public static void Build()
@@ -53,6 +53,7 @@ public static class CampusMazeProjectBuilder
         {
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(paths[i]);
             importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = 64f;
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
@@ -122,6 +123,8 @@ public static class CampusMazeProjectBuilder
     {
         if (AssetDatabase.IsValidFolder(AnimatorFolder))
             AssetDatabase.DeleteAsset(AnimatorFolder);
+        if (AssetDatabase.IsValidFolder("Assets/Animators"))
+            AssetDatabase.DeleteAsset("Assets/Animators");
         Directory.CreateDirectory(AnimatorFolder);
         CreatePacStudentAnimator();
         CreatePowerAnimator();
@@ -232,6 +235,7 @@ public static class CampusMazeProjectBuilder
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         GameObject menu = new GameObject("StartScene Controller");
         menu.AddComponent<MainMenuView>();
+        CreateCamera(28, 29);
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/StartScene.unity");
     }
 
@@ -248,6 +252,7 @@ public static class CampusMazeProjectBuilder
         serialized.ApplyModifiedPropertiesWithoutUndo();
         level.Generate();
         level.levelRoot.name = "Level01";
+        CreateCamera(level.Width, level.Height);
         CreateGallery();
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/RecreatedLevel.unity");
     }
@@ -255,6 +260,8 @@ public static class CampusMazeProjectBuilder
     static void CreateGallery()
     {
         GameObject gallery = new GameObject("Visual Assets Preview");
+        CreateStaticPreview(gallery.transform, "Bonus", new Vector3(-8f, -15.5f, 0f));
+        CreateStaticPreview(gallery.transform, "Life", new Vector3(-6f, -15.5f, 0f));
         CreatePreview(gallery.transform, "PacStudent Animation Preview", new Vector3(-4f, -15.5f, 0f), "PacStudentAnimator");
         CreatePreview(gallery.transform, "Power Pellet Animation Preview", new Vector3(-2f, -15.5f, 0f), "PowerPelletAnimator");
         for (int i = 0; i < 4; i++)
@@ -270,5 +277,26 @@ public static class CampusMazeProjectBuilder
         renderer.sortingOrder = 30;
         Animator animator = preview.AddComponent<Animator>();
         animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorFolder + "/" + controllerName + ".controller");
+    }
+
+    static void CreateStaticPreview(Transform parent, string spriteName, Vector3 position)
+    {
+        GameObject preview = new GameObject(spriteName + " Preview");
+        preview.transform.SetParent(parent);
+        preview.transform.position = position;
+        preview.AddComponent<SpriteRenderer>().sprite = LoadSprite(spriteName);
+    }
+
+    static void CreateCamera(int width, int height)
+    {
+        GameObject cameraObject = new GameObject("Main Camera");
+        cameraObject.tag = "MainCamera";
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.orthographic = true;
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = new Color(0.008f, 0.013f, 0.05f);
+        camera.orthographicSize = Mathf.Max(height * 0.55f, width * 0.5f) + 1.4f;
+        camera.transform.position = new Vector3(0f, 0f, -10f);
+        cameraObject.AddComponent<AudioListener>();
     }
 }

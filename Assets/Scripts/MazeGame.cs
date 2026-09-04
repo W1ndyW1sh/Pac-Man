@@ -177,6 +177,7 @@ namespace CampusMaze
             SpriteRenderer renderer = bonus.AddComponent<SpriteRenderer>();
             renderer.sprite = MazeArt.Bonus();
             renderer.sortingOrder = 18;
+            bonus.transform.localScale = Vector3.one * 1.35f;
             bonus.transform.position = level.CellToWorld(new Vector2Int(level.Width / 2, level.Height / 2 + 3));
         }
 

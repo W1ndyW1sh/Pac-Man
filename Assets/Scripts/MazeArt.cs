@@ -135,7 +135,7 @@ namespace CampusMaze
             if (Cache.TryGetValue(key, out sprite) && sprite != null)
                 return sprite;
 
-            sprite = Resources.Load<Sprite>("Generated/" + key);
+            sprite = Resources.Load<Sprite>("characters/" + key);
             if (sprite != null)
             {
                 Cache[key] = sprite;
@@ -272,81 +272,109 @@ namespace CampusMaze
         {
             Vector2 dir = new Vector2(direction.x, direction.y);
             Vector2 side = new Vector2(-dir.y, dir.x);
-            Vector2 center = new Vector2(32f, 34f);
+            Vector2 center = new Vector2(32f, 32f);
+            Color32[] colours = { Coral, Violet, Blue, Orange };
+            Color32 identity = colours[index];
 
             if (dead)
             {
-                if (frame == 0)
-                    DrawEyes(pixels, center, dir, side, true);
-                else
+                float spread = frame == 0 ? 12f : 17f;
+                for (int i = -1; i <= 1; i += 2)
                 {
-                    Vector2 first = center + side * 8f;
-                    Vector2 second = center - side * 8f;
-                    FillEllipse(pixels, first.x, first.y, 5f, 3f, White);
-                    FillEllipse(pixels, second.x, second.y, 5f, 3f, White);
-                    FillCircle(pixels, first.x + dir.x * 2.6f, first.y + dir.y * 1.4f, 1.5f, Cyan);
-                    FillCircle(pixels, second.x + dir.x * 2.6f, second.y + dir.y * 1.4f, 1.5f, Cyan);
+                    DronePolygon(pixels, center, dir, side, WithAlpha(identity, 190),
+                        -9, i * spread, -2, i * (spread + 4), 3, i * spread, -4, i * (spread - 2));
+                    DroneLine(pixels, center, dir, side, -17, i * 7, -24 - frame * 3, i * 7, 1f, Cyan);
                 }
-                Vector2 trail = center - dir * (frame == 0 ? 17f : 13f);
-                Vector2 left = trail + side * (frame == 0 ? 10f : 6f);
-                Vector2 right = trail - side * (frame == 0 ? 10f : 6f);
-                Vector2 tail = trail - dir * (frame == 0 ? 6f : 10f);
-                DrawLine(pixels, left.x, left.y, tail.x, tail.y, 1.4f, WithAlpha(Cyan, 160));
-                DrawLine(pixels, tail.x, tail.y, right.x, right.y, 1.4f, WithAlpha(Cyan, 160));
+                DronePolygon(pixels, center, dir, side, NavyLight, -9, -7, 5, -7, 12, 0, 5, 7, -9, 7);
+                DronePolygon(pixels, center, dir, side, Cyan, -5, -4, 4, -4, 8, 0, 4, 4, -5, 4);
+                DroneLine(pixels, center, dir, side, -3, 0, frame == 0 ? 2 : 5, 0, 1.4f, White);
+                DroneLine(pixels, center, dir, side, -12, 0, -19 - frame * 7, 0, 1.5f, WithAlpha(Cyan, 170));
                 return;
             }
 
-            Color32[] colours = { Coral, Violet, Blue, Orange };
-            Color32 shell = scared ? new Color32(38, 91, 204, 255) : colours[index];
-            Color32 glow = scared ? new Color32(68, 138, 255, 70) : WithAlpha(shell, 60);
-            FillCircle(pixels, center.x, center.y, 23f, glow);
+            Color32 shell = scared ? new Color32(57, 91, 133, 255) : identity;
+            Color32 edge = scared ? new Color32(118, 168, 198, 255) : White;
+            Color32 signal = scared ? Orange : Cyan;
+            float thrust = scared ? (frame == 0 ? 3f : 7f) : (frame == 0 ? 6f : 11f);
+            float fin = frame == 0 ? 17f : 20f;
 
-            Vector2[] body =
+            for (int i = -1; i <= 1; i += 2)
             {
-                new Vector2(13f, 20f), new Vector2(16f, 48f), new Vector2(25f, 55f),
-                new Vector2(39f, 55f), new Vector2(48f, 48f), new Vector2(51f, 20f),
-                new Vector2(44f, frame == 0 ? 12f : 16f), new Vector2(37f, frame == 0 ? 18f : 11f),
-                new Vector2(29f, frame == 0 ? 11f : 18f), new Vector2(21f, frame == 0 ? 18f : 12f)
-            };
-            FillPolygon(pixels, body, shell);
-            DrawLine(pixels, 16f, 46f, 25f, 53f, 1.2f, WithAlpha(White, 120));
-            DrawLine(pixels, 25f, 53f, 39f, 53f, 1.2f, WithAlpha(White, 120));
+                DronePolygon(pixels, center, dir, side, WithAlpha(signal, 150),
+                    -12, i * 13, -14 - thrust, i * 16, -12, i * 19);
+                DronePolygon(pixels, center, dir, side, NavyLight,
+                    -14, i * 12, 2, i * 12, 7, i * 17, -1, i * 22, -14, i * 20);
+                DroneLine(pixels, center, dir, side, -10, i * 17, 0, i * fin, 1.7f, shell);
+                DroneLine(pixels, center, dir, side, -13, i * 15, -13 - thrust * 0.5f, i * 16, 1f, Cream);
+            }
+
+            switch (index)
+            {
+                case 0:
+                    DronePolygon(pixels, center, dir, side, shell,
+                        25, 0, -13, -17, -8, -5, -17, 0, -8, 5, -13, 17);
+                    DronePolygon(pixels, center, dir, side, Navy,
+                        16, 0, -6, -9, -3, 0, -6, 9);
+                    DroneLine(pixels, center, dir, side, 20, 0, -8, 12, 0.7f, edge);
+                    break;
+                case 1:
+                    DronePolygon(pixels, center, dir, side, shell,
+                        21, 0, 0, -21, -17, -9, -12, 0, -17, 9, 0, 21);
+                    DronePolygon(pixels, center, dir, side, Navy,
+                        12, 0, -1, -12, -10, 0, -1, 12);
+                    DroneLine(pixels, center, dir, side, 0, 17, 17, 0, 0.7f, edge);
+                    break;
+                case 2:
+                    DronePolygon(pixels, center, dir, side, shell,
+                        15, -14, 22, -7, 22, 7, 15, 14, -15, 14, -15, -14);
+                    DronePolygon(pixels, center, dir, side, Navy,
+                        -10, -9, 12, -9, 16, -5, 16, 5, 12, 9, -10, 9);
+                    DroneLine(pixels, center, dir, side, -11, 11, 13, 11, 0.7f, edge);
+                    DroneLine(pixels, center, dir, side, 18, -5, 18, 5, 1f, signal);
+                    break;
+                default:
+                    DronePolygon(pixels, center, dir, side, shell,
+                        20, -8, 20, 8, 6, 18, -10, 18, -18, 9, -18, -9, -10, -18, 6, -18);
+                    DronePolygon(pixels, center, dir, side, Navy,
+                        14, -5, 14, 5, 3, 11, -9, 11, -12, 0, -9, -11, 3, -11);
+                    DroneLine(pixels, center, dir, side, -9, 14, 5, 14, 0.7f, edge);
+                    DroneLine(pixels, center, dir, side, 17, -5, 17, 5, 1f, signal);
+                    break;
+            }
 
             if (scared)
             {
-                Vector2 face = center + dir * 7f;
-                Vector2 first = face + side * 7f;
-                Vector2 second = face - side * 7f;
-                FillCircle(pixels, first.x, first.y, 3.6f, White);
-                FillCircle(pixels, second.x, second.y, 3.6f, White);
-                float look = frame == 0 ? 1.2f : 2f;
-                FillCircle(pixels, first.x + dir.x * look, first.y + dir.y * look, 1.5f, Navy);
-                FillCircle(pixels, second.x + dir.x * look, second.y + dir.y * look, 1.5f, Navy);
-                Vector2 mouth = center - dir * 7f;
-                for (int i = 0; i < 4; i++)
-                {
-                    Vector2 a = mouth + side * (-10f + i * 5f) + dir * (i % 2 == 0 ? -2f : 2f);
-                    Vector2 b = mouth + side * (-5f + i * 5f) + dir * (i % 2 == 0 ? 2f : -2f);
-                    DrawLine(pixels, a.x, a.y, b.x, b.y, 1.7f, Cream);
-                }
+                DronePolygon(pixels, center, dir, side, frame == 0 ? Orange : Cream, 9, 0, -6, -8, -6, 8);
+                DroneLine(pixels, center, dir, side, 3, 0, -1, 0, 0.9f, Navy);
+                Vector2 dot = center - dir * 4f;
+                FillCircle(pixels, dot.x, dot.y, 1.1f, Navy);
+                float spark = frame == 0 ? -1f : 1f;
+                DroneLine(pixels, center, dir, side, -18, spark * 20, -21, spark * 24, 0.8f, Orange);
+                DroneLine(pixels, center, dir, side, -21, spark * 24, -17, spark * 27, 0.8f, Cream);
             }
             else
             {
-                DrawEyes(pixels, center + dir * 2f, dir, side, false);
-                FillRect(pixels, 28, 22, 35, 24, Navy);
+                float pulse = frame == 0 ? 3f : 5f;
+                DronePolygon(pixels, center, dir, side, signal, 9, 0, 1, -pulse, -5, 0, 1, pulse);
+                DroneLine(pixels, center, dir, side, 2, 0, 6, 0, 0.9f, White);
+                for (int i = 0; i <= index; i++)
+                    DroneLine(pixels, center, dir, side, -8 - i * 2, -3, -8 - i * 2, 3, 0.55f, WithAlpha(shell, 230));
             }
         }
 
-        static void DrawEyes(Color32[] pixels, Vector2 center, Vector2 dir, Vector2 side, bool dead)
+        static void DronePolygon(Color32[] pixels, Vector2 center, Vector2 dir, Vector2 side, Color32 colour, params float[] coordinates)
         {
-            Vector2 first = center + side * 8f;
-            Vector2 second = center - side * 8f;
-            FillEllipse(pixels, first.x, first.y, 5f, 7f, White);
-            FillEllipse(pixels, second.x, second.y, 5f, 7f, White);
-            Color32 pupil = dead ? Cyan : Navy;
-            Vector2 look = dir * 2.6f;
-            FillCircle(pixels, first.x + look.x, first.y + look.y, 2.3f, pupil);
-            FillCircle(pixels, second.x + look.x, second.y + look.y, 2.3f, pupil);
+            Vector2[] points = new Vector2[coordinates.Length / 2];
+            for (int i = 0; i < points.Length; i++)
+                points[i] = center + dir * coordinates[i * 2] + side * coordinates[i * 2 + 1];
+            FillPolygon(pixels, points, colour);
+        }
+
+        static void DroneLine(Color32[] pixels, Vector2 center, Vector2 dir, Vector2 side, float x0, float y0, float x1, float y1, float width, Color32 colour)
+        {
+            Vector2 start = center + dir * x0 + side * y0;
+            Vector2 end = center + dir * x1 + side * y1;
+            DrawLine(pixels, start.x, start.y, end.x, end.y, width, colour);
         }
 
         static void DrawBonus(Color32[] pixels)

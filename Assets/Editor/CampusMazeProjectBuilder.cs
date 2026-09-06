@@ -10,11 +10,11 @@ using UnityEngine.SceneManagement;
 
 public static class CampusMazeProjectBuilder
 {
-    const string SpriteFolder = "Assets/Resources/Generated";
+    const string SpriteFolder = "Assets/Resources/characters";
     const string AudioFolder = "Assets/Resources/Audio Clips";
     const string AnimatorFolder = "Assets/Resources/Animators";
 
-    [MenuItem("Campus Maze/Build Complete Project")]
+    [MenuItem("Space Wars/Build Complete Project")]
     public static void Build()
     {
         ExportSprites();
@@ -27,12 +27,12 @@ public static class CampusMazeProjectBuilder
             new EditorBuildSettingsScene("Assets/Scenes/StartScene.unity", true),
             new EditorBuildSettingsScene("Assets/Scenes/RecreatedLevel.unity", true)
         };
-        PlayerSettings.productName = "Campus Maze";
+        PlayerSettings.productName = "Space Wars";
         PlayerSettings.companyName = "UTS Student";
         PlayerSettings.defaultScreenWidth = 900;
         PlayerSettings.defaultScreenHeight = 900;
         AssetDatabase.SaveAssets();
-        Debug.Log("CAMPUS MAZE BUILD COMPLETE");
+        Debug.Log("SPACE WARS BUILD COMPLETE");
     }
 
     static void ExportSprites()

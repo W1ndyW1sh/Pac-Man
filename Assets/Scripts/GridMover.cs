@@ -39,9 +39,9 @@ namespace CampusMaze
 
         private void Update()
         {
+            ReadInput();
             if (!game.IsPlaying)
                 return;
-            ReadInput();
             Animate();
             float remaining = Time.deltaTime;
             while (remaining > 0f && game.IsPlaying)

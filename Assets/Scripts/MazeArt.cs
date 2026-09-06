@@ -135,7 +135,7 @@ namespace CampusMaze
             if (Cache.TryGetValue(key, out sprite) && sprite != null)
                 return sprite;
 
-            sprite = Resources.Load<Sprite>("characters/" + key);
+            sprite = Resources.Load<Sprite>("Characters/" + key);
             if (sprite != null)
             {
                 Cache[key] = sprite;

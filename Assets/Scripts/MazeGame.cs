@@ -129,6 +129,8 @@ namespace CampusMaze
             {
                 score += 500;
                 Destroy(bonus);
+                bonus = null;
+                bonusTimer = 0f;
                 audioController.Play("bonus");
             }
         }
@@ -199,7 +201,7 @@ namespace CampusMaze
             if (lives <= 0)
             {
                 gameEnded = true;
-                message = "MISSION FAILED\nPRESS R TO RETRY";
+                message = "MISSION FAILED";
                 yield break;
             }
             player.ResetAt(level.PlayerSpawn);
@@ -218,7 +220,7 @@ namespace CampusMaze
         private void Win()
         {
             gameEnded = true;
-            message = "NETWORK RESTORED\nPRESS R TO PLAY AGAIN";
+            message = "NETWORK RESTORED";
             audioController.Play("win");
         }
 
@@ -228,7 +230,7 @@ namespace CampusMaze
             GUI.Label(new Rect(24f, 15f, 360f, 50f), "SCORE  " + score.ToString("000000"), hudStyle);
             GUI.Label(new Rect(Screen.width - 245f, 15f, 220f, 50f), "LIVES  " + lives, hudStyle);
             if (paused)
-                GUI.Label(new Rect(0f, Screen.height * 0.42f, Screen.width, 100f), "PAUSED\nESC TO CONTINUE", messageStyle);
+                GUI.Label(new Rect(0f, Screen.height * 0.42f, Screen.width, 100f), "PAUSED", messageStyle);
             else if (!string.IsNullOrEmpty(message))
                 GUI.Label(new Rect(0f, Screen.height * 0.42f, Screen.width, 120f), message, messageStyle);
         }

@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 public static class CampusMazeProjectBuilder
 {
-    const string SpriteFolder = "Assets/Resources/characters";
+    const string SpriteFolder = "Assets/Resources/Characters";
     const string AudioFolder = "Assets/Resources/Audio Clips";
     const string AnimatorFolder = "Assets/Resources/Animators";
 
